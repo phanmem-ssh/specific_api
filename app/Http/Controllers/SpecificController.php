@@ -35,54 +35,61 @@ class SpecificController extends Controller
 
     public function handle(Request $request)
     {
-       
+
         $this->inputText = "SoLonHon(a:R,b:R)c:R
         pre 
         post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
+
+        $lines = explode("\n", $this->inputText);
+
+        $this->getVariableInfo($lines[0]);
+        //$this->lstVariables
+
+
+        return response()->json([
+            "code" => 200,
+            "success" => true,
+            "data" =>  $this->lstVariables
+        ], 200);
 
         return eval('
         return response()->json([
             "code" => 200,
             "success" => true,
-            "data" =>  "fdgdfdf"
+            "data" =>  $this->lstVariables
         ], 200);
         ');
     }
 
     public function getVariableInfo($line)
-        {
-            $start = strpos($line, '(');
-            $end = strpos($line, ')');
-
-            $variableString = substr($line, $start + 1, $end - $start - 1);
-
-            $variables = explode(",", $variableString);
-
-            foreach ($variables as $v )
-            {
-                $splits = explode(":", $v);
-                $vName = trim($splits[0]);
-                $vType = $this->typesName[trim($splits[1])];
-                $Result = $vName + " : " + $vType;
-             
-                array_push(
-                    $this->lstVariables, 
-                    [
-                        $vName => $vType
-                    ]);
-            }
-        }
-
-    public function handle2(Request $request)
     {
-        
-        echo $this->array2;
-        return eval('
-        return response()->json([
-            "code" => 200,
-            "success" => true,
-            "data" =>  "fdgdfdf"
-        ], 200);
-        ');
+        $start = strpos($line, '(');
+        $end = strpos($line, ')');
+
+        $variableString = substr($line, $start + 1, $end - $start - 1);
+
+        $variables = explode(",", $variableString);
+
+        foreach ($variables as $v) {
+            $splits = explode(":", $v);
+            $vName = trim($splits[0]);
+            $vType = $this->typesName[trim($splits[1])];
+            $Result = $vName." : ".$vType;
+
+            array_push(
+                $this->lstVariables,
+                [
+                    $vName => $vType
+                ]
+            );
+        }
+    }
+
+    private function getResult($line)
+    {
+        $start = strpos($line,')');
+        $resultString = substr($line,$start + 1);
+        $rsName = trim(explode(':',$resultString)[0]);
+        $rsType = $this->typesName[explode(':',$resultString)[1]];
     }
 }
