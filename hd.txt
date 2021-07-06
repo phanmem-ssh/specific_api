@@ -1,0 +1,28 @@
+start: 
+php artisan serve --port=8000
+
+php artisan apidoc:generate 
+
+php artisan config:cache
+php artisan cache:clear
+
+
+php artisan view:clear
+php artisan log-viewer:clear
+
+
+//kill port
+ npx kill-port 3000
+
+ sudo ln -s /etc/nginx/sites-available/demo /etc/nginx/sites-enabled/
+
+Cách chạy server:
+1. //start event
+php artisan queue:listen
+php artisan queue:listen --timeout=0
+2. //start redis
+sudo apt install redis-server
+redis-server --port 6379
+3. //start node
+cd server_node
+node server.js
