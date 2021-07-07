@@ -4,20 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class Program
-{
-    public $name;
-    public $color;
-
-    function set_name($name)
-    {
-        $this->name = $name;
-    }
-    function get_name()
-    {
-        return $this->name;
-    }
-}
 
 class SpecificController extends Controller
 {
@@ -46,42 +32,43 @@ class SpecificController extends Controller
 
     protected $inputText = "";
 
+    protected $c ;
+
     public function handle(Request $request)
     {
 
-        $program = new Program();
-        $program->set_name("dsad");
 
 
+      
+        //         $this->inputText = "SoLonHon(a:R,b:R)c:R
+        // pre 
+        // post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
 
+        //         $lines = explode("\n", $this->inputText);
 
-        $this->inputText = "SoLonHon(a:R,b:R)c:R
-pre 
-post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
+        //         $this->getVariableInfo($lines[0]);
+        //         //$this->lstVariables
 
-        $lines = explode("\n", $this->inputText);
+        //         $this->getResult($lines[0]);
+        //         // $this->rsName
+        //         // $this->rsType
 
-        $this->getVariableInfo($lines[0]);
-        //$this->lstVariables
+        //         $this->getFunctionName($lines[0]);
+        //         // $this->fName
 
-        $this->getResult($lines[0]);
-        // $this->rsName
-        // $this->rsType
+        //         $this->getCondition($lines[1]);
+        //         // $this->condition
 
-        $this->getFunctionName($lines[0]);
-        // $this->fName
+        //         $this->getPost($lines[2]);
+        //         // $this->post
 
-        $this->getCondition($lines[1]);
-        // $this->condition
-
-        $this->getPost($lines[2]);
-        // $this->post
-
-        $this->getMainFunction($this->post);
-        // $this->tmp
+        //         $this->getMainFunction($this->post);
+        //         // $this->tmp
 
 
         //createInputFunction()
+
+        $this->split_text($request);
 
         $this->createInputFunction();
         $this->createCheckFunction();
@@ -94,7 +81,10 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
             $this->createInputFunction() .
             $this->createCheckFunction() .
             $this->createResultFunction();
+            $this->createOutputFunction();
 
+
+            //  echo $textHandle;
 
         eval($textHandle);
 
@@ -106,9 +96,43 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
             "code" => 200,
             "success" => true,
 
-            "data" =>  $c,
+            "data" =>  $this->c,
             "text_handle" => $textHandle
         ], 200);
+    }
+
+
+    public function  split_text(Request $request, $get_availible = false)
+    {
+
+        $lines = explode("\n", $request->text);
+
+        $currentLine = 0;
+        $fInfoString = "";
+        $cInfoString = "";
+        $pInfoString = "";
+        while (strlen(trim($lines[$currentLine])) < 3 || ($currentLine < count($lines) - 1 && substr(trim($lines[$currentLine]), 0, 3) != "pre")) {
+            $fInfoString = $fInfoString . trim($lines[$currentLine]);
+            $currentLine++;
+        }
+        $this->getVariableInfo($fInfoString);
+        $this->getFunctionName($fInfoString);
+
+        if ($get_availible == false) {
+            $this->getResult($fInfoString);
+
+            while (strlen(trim($lines[$currentLine])) < 4 || ($currentLine < count($lines) - 1 && substr(trim($lines[$currentLine]), 0, 4) != "post")) {
+                $fInfoString = $fInfoString . trim($lines[$currentLine]);
+                $currentLine++;
+            }
+            $this->getCondition($cInfoString);
+            while ($currentLine < count($lines)) {
+                $pInfoString = $pInfoString . trim($lines[$currentLine]);
+                $currentLine++;
+            }
+            $this->getPost($pInfoString);
+            $this->getMainFunction($this->post);
+        }
     }
 
     public function getVariableInfo($line)
@@ -140,7 +164,8 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
         $start = strpos($line, ')');
         $resultString = substr($line, $start + 1);
         $this->rsName = trim(explode(':', $resultString)[0]);
-        $this->rsType = $this->typesName[explode(':', $resultString)[1]];
+
+        $this->rsType = $this->typesName[trim(explode(':', $resultString)[1])];
     }
 
     private function getFunctionName($line)
@@ -230,6 +255,7 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
 
     private function createOutputFunction()
     {
+      
         $fInputRef = "";
         $InputRef = "\$$this->rsName";
         $fOutputCode = "\n\t\t\t echo(\"Ket qua la: $" . $this->rsName . " \");\n";
@@ -252,7 +278,7 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
             $fInputRef =  $fInputRef . $variable;
         }
         $fInputRef = substr($fInputRef, 0, strlen($fInputRef) - 1);
-        return "\n///// Kiem tra dieu kien bien  \n" . $cond . "\t\t\n \n  \n";
+        return "\n///// Kiem tra dieu kien bien  " . $this->cond . "\t\t   \n";
     }
 
     private function  createResultFunction()
@@ -298,56 +324,35 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
                 $cond = str_replace("not__equal", "!=", $cond);
                 $cond = str_replace("greater__equal", ">=", $cond);
                 $cond = str_replace("less__equal", "<=", $cond);
-                $calculate = $calculate . "\n\t\t\tif$cond";
+                $calculate = $calculate . "\n\t\t\tif($cond)";
                 $calculate = $calculate . "\n\t\t\t\t$replaceStr;";
 
 
-                $pattern = '/(\w+)/i';
-                $replacement = '$${1}';
+                $pattern = '/[a-z]+/';
+                $replacement = '$${0}';
                 $calculate = preg_replace($pattern, $replacement, $calculate);
 
                 $calculate = str_replace("$$", "$", $calculate);
                 $calculate = str_replace("\$if", "if", $calculate);
+                $calculate = str_replace("\$FALSE", "FALSE", $calculate);
+                $calculate = str_replace("\$TRUE", "TRUE", $calculate);
             }
         }
         $input = substr($input, 0, strlen($input) - 1);
-        return "\n///// Ham xu ly \n " .
+
+       
+
+        return " \n///// Ham xu ly \n " .
             "$rsString;" .
             "$calculate" .
             // "\n\t\t\treturn $this->rsName;" .
             // \n\t\t}
-            " \n";
+            " \n 
+            \$this->c = $".$this->rsName.";
+            ";
     }
 
 
-    private function   createMainFunction()
-    {
-        //create var
-
-        $mainCode = "";
-        $varString = "";
-        $inputWithRef = "";
-        $input = "";
-        foreach ($this->lstVariables as $v) {
-            $varString = $varString . "\n\t\t\t" . current($v) . " " . key($v) . " = " . $this->initValue[current($v)] . ";";
-            $input = $input . "" . key($v) . ",";
-            $inputWithRef = $inputWithRef . "ref " . key($v) . ",";
-        }
-        $varString = $varString . "\n\t\t\t$this->rsType $this->rsName = " . $this->initValue[$this->rsType] . ";";
-        $input = $input . substr($input, 0, strlen($input) - 1);
-        $inputWithRef = $inputWithRef . substr($inputWithRef, 0, strlen($inputWithRef) - 1);
-        $varString = $varString . "\n\t\t\tProgram p = new Program();";
-        $mainCode = $mainCode . "\n\t\t\tp.Nhap_$this->fName($inputWithRef);";
-        $mainCode = $mainCode . "\n\t\t\tif(p.KiemTra_$this->fName($input))" .
-            "\n\t\t\t{{" .
-            "\n\t\t\t\t" .
-            "$this->rsName = p.$this->fName($input);" .
-            "\n\t\t\t\tp.Xuat_$this->fName($this->rsName);" .
-            "\n\t\t\t}}" .
-            "\n\t\t\telse\n\t\t\t\tConsole.WriteLine(\"Thong tin nhap khong hop le\");" .
-            "\n\t\t\tConsole.ReadLine();";
-        return "public static function main()\n\t\t{{" . $varString . " " . $mainCode . "\n\t\t}}";
-    }
 
 
     public function test_code(Request $request)
@@ -373,25 +378,23 @@ post ((c=a)&&(a>=b))||((c=b)&&(b>a))";
 
     public function variable(Request $request)
     {
-       ;
-        $lines = explode("\n", $request->text);
-        if( $request->text != null) {
-            $this->getVariableInfo($lines[0]);
-            //$this->lstVariables
-    
+
+        if ($request->text != null) {
+            $this->split_text($request, true);
+
             return response()->json([
                 "code" => 200,
                 "success" => true,
+                "func_name" => $this->fName,
                 "data" =>  $this->lstVariables,
             ], 200);
         } else {
-     
+
             return response()->json([
                 "code" => 200,
                 "success" => true,
                 "data" =>  null
             ], 200);
         }
-      
     }
 }
