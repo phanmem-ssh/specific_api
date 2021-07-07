@@ -20,4 +20,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 
 Route::post('/handle', 'App\Http\Controllers\SpecificController@handle');
+Route::post('/test_code', 'App\Http\Controllers\SpecificController@test_code');
     
+Route::post('/variable', 'App\Http\Controllers\SpecificController@variable');
